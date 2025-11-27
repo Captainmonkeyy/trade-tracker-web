@@ -62,11 +62,24 @@ h2 {
     padding-bottom: 5px;
 }
 
-.form-row {
+.form-vertical {
     display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 400px;
+}
+
+.form-row-vertical {
+    display: flex;
+    flex-direction: column;
+}
+
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
     gap: 15px;
     align-items: end;
-    flex-wrap: wrap;
 }
 
 .form-group {
@@ -159,25 +172,7 @@ input[type="number"]:focus {
     font-size: 12px;
 }
 
-.account-name-display {
-    display: block;
-    margin-top: 5px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-}
 
-.account-name-display.valid {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-}
-
-.account-name-display.invalid {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-}
 
 .table-container {
     overflow-x: auto;
@@ -235,10 +230,14 @@ input[type="number"]:focus {
     flex-wrap: wrap;
 }
 
+.action-buttons {
+    display: flex;
+}
+
 .payment-form,
 .lock-form,
 .delete-form {
-    display: inline;
+    display: flex;
 }
 
 .payment-form input {
@@ -294,7 +293,7 @@ input[type="number"]:focus {
     }
 
     .form-row {
-        flex-direction: column;
+        grid-template-columns: 1fr;
     }
 
     .form-group {
@@ -330,4 +329,44 @@ input[type="number"]:focus {
 .logout-form {
     display: inline;
     margin-left: 15px;
+}
+
+/* 更新账户名称显示样式 */
+/* 账户名称显示样式 - 始终显示的输入框样式 */
+.account-name-display {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #f8f9fa; /* 浅灰色背景 */
+    color: #333; /* 改为深色文字，与输入框一致 */
+    min-height: 38px;
+    line-height: 1.5;
+    margin-top: 5px;
+    cursor: default; /* 默认光标 */
+    user-select: none; /* 禁止文字选择 */
+    font-family: inherit; /* 继承字体 */
+    box-sizing: border-box; /* 盒模型 */
+}
+
+/* 验证状态 - 移除绿色，改为与输入框一致的样式 */
+.account-name-display.valid {
+    background-color: #f8f9fa; /* 保持浅灰色背景 */
+    color: #333; /* 深色文字 */
+    border-color: #ddd; /* 正常边框颜色 */
+    font-weight: normal; /* 正常字重 */
+}
+
+.account-name-display.invalid {
+    background-color: #f8f9fa; /* 保持浅灰色背景 */
+    color: #333; /* 深色文字 */
+    border-color: #e74c3c; /* 只有边框变红色表示错误 */
+}
+
+/* 初始状态 - 提示文字 */
+.account-name-display:not(.valid):not(.invalid) {
+    color: #6c757d; /* 灰色提示文字 */
+    font-style: italic;
 }
