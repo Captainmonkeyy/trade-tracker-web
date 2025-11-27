@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>账户管理系统 - 登录</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-form">
+            <h1>账户管理系统</h1>
+            {% if error %}
+            <div class="error-message">
+                {{ error }}
+            </div>
+            {% endif %}
+            <form method="post" action="/login">
+                <div class="form-group">
+                    <label for="username">请输入您的姓名：</label>
+                    <input type="text" id="username" name="username" placeholder="请输入姓名" value="{{ username or '' }}">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">进入系统</button>
+                    <button type="submit" name="viewer_mode" value="true" class="btn btn-secondary">浏览者模式</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

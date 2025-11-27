@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>账户管理系统</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>账户管理系统</h1>
+            <div class="user-info">
+                {% if session.is_viewer %}
+                    <span class="viewer-mode">您已进入浏览模式</span>
+                {% else %}
+                    <span class="user-greeting">您好，{{ session.username }}</span>
+                {% endif %}
+                <form method="post" action="/logout" class="logout-form">
+                    <button type="submit" class="btn btn-small btn-secondary">退出登录</button>
+                </form>
+            </div>
+        </header>
+
+        <!-- 其余代码保持不变 -->
+        {% if not session.is_viewer %}
+        <div class="add-account-section">
+            <h2>添加新账户</h2>
+            <form method="post" action="/add_account" class="account-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="account_code">账户编码：</label>
+                        <input type="text" id="account_code" name="account_code" required
+                               onchange="getAccountName()">
+                        <span id="account_name_display" class="account-name-display"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="total_amount">待出金额总量：</label>
+                        <input type="number" id="total_amount" name="total_amount" step="1" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">添加账户</button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+
+        <div class="accounts-section">
+            <h2>账户记录</h2>
+            {% if accounts %}
+            <div class="table-container">
+                <table class="accounts-table">
+                    <thead>
+                        <tr>
+                            <th>管理人</th>
+                            <th>账户编码</th>
+                            <th>账户名称</th>
+                            <th>总金额</th>
+                            {% for i in range(accounts|map(attribute='paid_amounts')|map('length')|max or 0) %}
+                            <th>已出金额{{ i + 1 }}</th>
+                            {% endfor %}
+                            <th>剩余金额</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for account in accounts %}
+                        <tr class="{{ 'locked' if account.locked }}">
+                            <td>{{ account.manager }}</td>
+                            <td>{{ account.account_code }}</td>
+                            <td>{{ account.account_name }}</td>
+                            <td>{{ account.total_amount }}</td>
+
+                            {% for amount in account.paid_amounts %}
+                            <td class="paid-amount" onclick="copyPaymentText('{{ account.account_name }}', '{{ account.manager }}', {{ amount }})">
+                                {{ amount }}
+                            </td>
+                            {% endfor %}
+
+                            {% for i in range((accounts|map(attribute='paid_amounts')|map('length')|max or 0) - account.paid_amounts|length) %}
+                            <td>-</td>
+                            {% endfor %}
+
+                            <td class="remaining-amount">{{ account.remaining_amount }}</td>
+                            <td class="actions">
+                                {% if not account.locked and (session.username == account.manager or session.is_viewer) %}
+                                <form method="post" action="/add_payment/{{ loop.index0 }}" class="payment-form">
+                                    <input type="number" name="amount" step="1" placeholder="金额" required
+                                           max="{{ account.remaining_amount }}">
+                                    <button type="submit" class="btn btn-small">添加支付</button>
+                                </form>
+                                {% endif %}
+
+                                {% if session.username == account.manager and not session.is_viewer %}
+                                <form method="post" action="/toggle_lock/{{ loop.index0 }}" class="lock-form">
+                                    <button type="submit" class="btn btn-small {{ 'btn-warning' if not account.locked else 'btn-success' }}">
+                                        {{ '锁定' if not account.locked else '解锁' }}
+                                    </button>
+                                </form>
+                                {% endif %}
+
+                                {% if session.username == account.manager or session.is_viewer %}
+                                <form method="post" action="/delete_account/{{ loop.index0 }}"
+                                      onsubmit="return confirm('确定要删除这个账户记录吗？')" class="delete-form">
+                                    <button type="submit" class="btn btn-small btn-danger">删除</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="no-accounts">暂无账户记录</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        async function getAccountName() {
+            const accountCode = document.getElementById('account_code').value;
+            const display = document.getElementById('account_name_display');
+
+            if (accountCode.length >= 4) {
+                try {
+                    const response = await fetch(`/get_account_name/${accountCode}`);
+                    const data = await response.json();
+                    display.textContent = data.account_name;
+                    display.className = 'account-name-display valid';
+                } catch (error) {
+                    display.textContent = '账户编码不存在';
+                    display.className = 'account-name-display invalid';
+                }
+            } else {
+                display.textContent = '';
+                display.className = 'account-name-display';
+            }
+        }
+
+        function copyPaymentText(accountName, manager, amount) {
+            const text = `${accountName} 发${manager} ${amount}w`;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('已复制到剪贴板: ' + text);
+            }).catch(err => {
+                console.error('复制失败: ', err);
+            });
+        }
+
+        // 限制支付金额输入
+        document.addEventListener('DOMContentLoaded', function() {
+            const paymentInputs = document.querySelectorAll('input[name="amount"]');
+            paymentInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    const maxAmount = parseInt(this.max);
+                    const currentAmount = parseInt(this.value);
+                    if (currentAmount > maxAmount) {
+                        this.value = maxAmount;
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

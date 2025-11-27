@@ -1,0 +1,16 @@
+{
+  "accounts": [
+    {
+      "account_code": "1001",
+      "account_name": "平安保险养老金",
+      "total_amount": 50000,
+      "manager": "钱律丞",
+      "created_time": "2025-11-20T23:20:28.395266",
+      "paid_amounts": [
+        5000
+      ],
+      "locked": false,
+      "remaining_amount": 45000
+    }
+  ]
+}
