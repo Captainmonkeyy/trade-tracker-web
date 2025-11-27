@@ -191,6 +191,8 @@ async def delete_account(account_index: int, session_id: Optional[str] = Cookie(
     return RedirectResponse(url="/", status_code=303)
 
 
+
+
 @app.get("/get_account_name/{account_code}")
 async def get_account_name(account_code: str):
     if account_code in ACCOUNT_MAPPING:
