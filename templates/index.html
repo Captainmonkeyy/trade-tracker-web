@@ -22,28 +22,31 @@
             </div>
         </header>
 
-        <!-- 其余代码保持不变 -->
         {% if not session.is_viewer %}
-        <div class="add-account-section">
-            <h2>添加新账户</h2>
-            <form method="post" action="/add_account" class="account-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="account_code">账户编码：</label>
-                        <input type="text" id="account_code" name="account_code" required
-                               onchange="getAccountName()">
-                        <span id="account_name_display" class="account-name-display"></span>
-                    </div>
+            <div class="add-account-section">
+                <h2>添加新账户</h2>
+                <form method="post" action="/add_account" class="account-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="account_code">账户编码</label>
+                            <input type="text" id="account_code" name="account_code" required
+                                   onchange="getAccountName()">
+                        </div>
 
-                    <div class="form-group">
-                        <label for="total_amount">待出金额总量：</label>
-                        <input type="number" id="total_amount" name="total_amount" step="1" required>
-                    </div>
+                        <div class="form-group">
+                            <label for="account_name_display">账户名称：</label>
+                            <span id="account_name_display" class="account-name-display">-</span>
+                        </div>
 
-                    <button type="submit" class="btn btn-primary">添加账户</button>
-                </div>
-            </form>
-        </div>
+                        <div class="form-group">
+                            <label for="total_amount">待出金额总量</label>
+                            <input type="number" id="total_amount" name="total_amount" step="1" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">添加账户</button>
+                    </div>
+                </form>
+            </div>
         {% endif %}
 
         <div class="accounts-section">
@@ -73,9 +76,8 @@
                             <td>{{ account.total_amount }}</td>
 
                             {% for amount in account.paid_amounts %}
-                            <td class="paid-amount" onclick="copyPaymentText('{{ account.account_name }}', '{{ account.manager }}', {{ amount }})">
+                            <td class="paid-amount" onclick="copyPaymentText('{{ account.account_name }}', '{{ account.manager }}', '{{ amount }}')">
                                 {{ amount }}
-                            </td>
                             {% endfor %}
 
                             {% for i in range((accounts|map(attribute='paid_amounts')|map('length')|max or 0) - account.paid_amounts|length) %}
@@ -118,49 +120,142 @@
         </div>
     </div>
 
-    <script>
-        async function getAccountName() {
-            const accountCode = document.getElementById('account_code').value;
-            const display = document.getElementById('account_name_display');
 
-            if (accountCode.length >= 4) {
-                try {
-                    const response = await fetch(`/get_account_name/${accountCode}`);
-                    const data = await response.json();
+<script>
+    async function getAccountName() {
+        const accountCode = document.getElementById('account_code').value;
+        const display = document.getElementById('account_name_display');
+
+        if (accountCode.length >= 4) {
+            try {
+                const response = await fetch(`/get_account_name/${accountCode}`);
+                const data = await response.json();
+
+                if (data.account_name) {
                     display.textContent = data.account_name;
                     display.className = 'account-name-display valid';
-                } catch (error) {
+                } else {
                     display.textContent = '账户编码不存在';
                     display.className = 'account-name-display invalid';
                 }
-            } else {
-                display.textContent = '';
-                display.className = 'account-name-display';
+            } catch (error) {
+                display.textContent = '查询失败';
+                display.className = 'account-name-display invalid';
+                console.error('Error fetching account name:', error);
             }
+        } else {
+            display.textContent = '';
+            display.className = 'account-name-display';
         }
+    }
 
-        function copyPaymentText(accountName, manager, amount) {
-            const text = `${accountName} 发${manager} ${amount}w`;
-            navigator.clipboard.writeText(text).then(() => {
-                alert('已复制到剪贴板: ' + text);
-            }).catch(err => {
-                console.error('复制失败: ', err);
-            });
-        }
+    function copyPaymentText(accountName, manager, amount) {
+        const text = `${accountName} 发${manager} ${amount}w`;
+        navigator.clipboard.writeText(text).then(() => {
+            alert('已复制到剪贴板: ' + text);
+        }).catch(err => {
+            console.error('复制失败: ', err);
+        });
+    }
 
-        // 限制支付金额输入
-        document.addEventListener('DOMContentLoaded', function() {
-            const paymentInputs = document.querySelectorAll('input[name="amount"]');
-            paymentInputs.forEach(input => {
-                input.addEventListener('input', function() {
-                    const maxAmount = parseInt(this.max);
-                    const currentAmount = parseInt(this.value);
-                    if (currentAmount > maxAmount) {
-                        this.value = maxAmount;
-                    }
-                });
+    // 限制支付金额输入
+    document.addEventListener('DOMContentLoaded', function() {
+        const paymentInputs = document.querySelectorAll('input[name="amount"]');
+        paymentInputs.forEach(input => {
+            input.addEventListener('input', function() {
+                const maxAmount = parseInt(this.max);
+                const currentAmount = parseInt(this.value);
+                if (currentAmount > maxAmount) {
+                    this.value = maxAmount;
+                }
             });
         });
-    </script>
+    });
+</script>
+
+    <!--    <script>-->
+    <!--    // 编辑总金额功能-->
+    <!--    function editTotalAmount(element) {-->
+    <!--        const currentAmount = element.textContent;-->
+    <!--        const accountIndex = element.getAttribute('data-account-index');-->
+
+    <!--        // 创建输入框-->
+    <!--        const input = document.createElement('input');-->
+    <!--        input.type = 'number';-->
+    <!--        input.value = currentAmount;-->
+    <!--        input.step = '1';-->
+    <!--        input.className = 'amount-edit-input';-->
+
+    <!--        // 替换span为输入框-->
+    <!--        element.replaceWith(input);-->
+    <!--        input.focus();-->
+    <!--        input.select();-->
+
+    <!--        // 处理输入完成-->
+    <!--        function finishEdit() {-->
+    <!--            const newAmount = input.value;-->
+    <!--            if (newAmount && newAmount !== currentAmount) {-->
+    <!--                if (confirm(`确定将总金额从 ${currentAmount} 修改为 ${newAmount} 吗？`)) {-->
+    <!--                    // 发送请求到后端更新金额-->
+    <!--                    updateTotalAmount(accountIndex, newAmount);-->
+    <!--                } else {-->
+    <!--                    // 取消编辑，恢复原值-->
+    <!--                    cancelEdit(input, currentAmount, accountIndex);-->
+    <!--                }-->
+    <!--            } else {-->
+    <!--                cancelEdit(input, currentAmount, accountIndex);-->
+    <!--            }-->
+    <!--        }-->
+
+    <!--        // 绑定事件-->
+    <!--        input.addEventListener('blur', finishEdit);-->
+    <!--        input.addEventListener('keydown', function(e) {-->
+    <!--            if (e.key === 'Enter') {-->
+    <!--                finishEdit();-->
+    <!--            } else if (e.key === 'Escape') {-->
+    <!--                cancelEdit(input, currentAmount, accountIndex);-->
+    <!--            }-->
+    <!--        });-->
+    <!--    }-->
+
+    <!--    // 取消编辑-->
+    <!--    function cancelEdit(input, originalAmount, accountIndex) {-->
+    <!--        const span = document.createElement('span');-->
+    <!--        span.className = 'editable-amount';-->
+    <!--        span.textContent = originalAmount;-->
+    <!--        span.setAttribute('data-account-index', accountIndex);-->
+    <!--        span.onclick = function() { editTotalAmount(this); };-->
+    <!--        input.replaceWith(span);-->
+    <!--    }-->
+
+    <!--    // 更新总金额到后端-->
+    <!--    async function updateTotalAmount(accountIndex, newAmount) {-->
+    <!--        try {-->
+    <!--            const response = await fetch('/update_total_amount', {-->
+    <!--                method: 'POST',-->
+    <!--                headers: {-->
+    <!--                    'Content-Type': 'application/json',-->
+    <!--                },-->
+    <!--                body: JSON.stringify({-->
+    <!--                    account_index: parseInt(accountIndex),-->
+    <!--                    new_amount: parseInt(newAmount)-->
+    <!--                })-->
+    <!--            });-->
+
+    <!--            const result = await response.json();-->
+
+    <!--            if (result.success) {-->
+    <!--                // 更新页面显示-->
+    <!--                location.reload();-->
+    <!--            } else {-->
+    <!--                alert('更新失败：' + result.message);-->
+    <!--                location.reload();-->
+    <!--            }-->
+    <!--        } catch (error) {-->
+    <!--            alert('网络错误，请重试');-->
+    <!--            location.reload();-->
+    <!--        }-->
+    <!--    }-->
+    <!--    </script>-->
 </body>
 </html>
